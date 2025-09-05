@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Document - DocuChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem;
+        }
+        .btn-hover-effect {
+            transition: all 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        #toast {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900 opacity-50 z-0"></div>
+
+    <main class="w-full max-w-4xl mx-auto z-10">
+        <div class="glassmorphism p-8 md:p-12 shadow-2xl">
+            <!-- Header with Logout -->
+            <header class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-300">
+                        Document Registration
+                    </h1>
+                    <p class="text-gray-300">Register new documents on the blockchain</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="text-sm text-gray-400"></span>
+                    <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg btn-hover-effect">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Registration Section -->
+            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-teal-300">Register a New Document</h2>
+                <div class="flex flex-col items-center">
+                    <p class="text-gray-400 mb-4 text-center">Upload a document to securely register its unique fingerprint on the blockchain.</p>
+                    <input type="file" id="newDocumentFile" class="hidden">
+                    <button id="uploadButton" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mb-4">
+                        Select Document
+                    </button>
+                    <div id="newFileInfo" class="text-center text-sm text-gray-400 min-h-[40px]"></div>
+                    <button id="registerButton" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mt-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Register Document
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display Latest Block Info -->
+            <div id="blockchainInfo" class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 text-center">
+                <h3 class="text-xl font-semibold text-gray-300 mb-2">Blockchain Status</h3>
+                <p class="text-gray-400">Current Blocks: <span id="blockCount" class="font-mono text-teal-400">1</span></p>
+                <p class="text-sm text-gray-500 mt-2">Latest Block Hash:</p>
+                <p id="latestBlockHash" class="font-mono text-xs text-blue-400 break-all">0000000000000000000000000000000000000000000000000000000000000000</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 border border-gray-700 text-white py-3 px-6 rounded-lg shadow-lg opacity-0 transform translate-y-2">
+        <p id="toastMessage"></p>
+    </div>
+
+    <!-- Include shared backend -->
+    <script src="shared-backend.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check authentication
+        const authCheck = sessionManager.requireAuth('registrar');
+        if (!authCheck.success) {
+            utils.showToast(authCheck.message, 'error');
+            setTimeout(() => {
+                window.location.href = 'login_registrar.html';
+            }, 2000);
+            return;
+        }
+
+        // Display user info
+        const user = authCheck.user;
+        document.getElementById('userInfo').textContent = `Logged in as: ${user.username}`;
+
+        // UI Element References
+        const uploadButton = document.getElementById('uploadButton');
+        const newDocumentFile = document.getElementById('newDocumentFile');
+        const newFileInfo = document.getElementById('newFileInfo');
+        const registerButton = document.getElementById('registerButton');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        let fileToRegister = null;
+
+        // Event Listeners
+        uploadButton.addEventListener('click', () => newDocumentFile.click());
+
+        newDocumentFile.addEventListener('change', (event) => {
+            fileToRegister = event.target.files[0];
+            if (fileToRegister) {
+                newFileInfo.textContent = `Selected: ${fileToRegister.name}`;
+                registerButton.disabled = false;
+            }
+        });
+
+        registerButton.addEventListener('click', async () => {
+            if (!fileToRegister) {
+                utils.showToast('Please select a document first.', 'error');
+                return;
+            }
+            utils.showToast('Processing and hashing document...', 'info');
+            
+            const documentHash = await cryptoLogic.hashFile(fileToRegister);
+            utils.showToast(`Document hash created: ${documentHash.substring(0,10)}...`, 'info');
+
+            setTimeout(async () => {
+                const result = await simulatedBackend.registerDocument(documentHash);
+                if (result.success) {
+                    utils.showToast(result.message, 'success');
+                    utils.updateBlockchainInfo();
+                } else {
+                    utils.showToast(result.message, 'error');
+                }
+                newDocumentFile.value = '';
+                fileToRegister = null;
+                newFileInfo.textContent = '';
+                registerButton.disabled = true;
+            }, 1500); 
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionManager.logout();
+            utils.showToast('Logged out successfully', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        });
+
+        // Initialize blockchain info
+        utils.updateBlockchainInfo();
+    });
+    </script>
+</body>
+</html>
