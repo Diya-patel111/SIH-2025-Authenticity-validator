@@ -1,9 +1,9 @@
-`<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocuChain - Secure Document Verification</title>
+    <title>DocuChain - Decentralized Document Verification</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -27,6 +27,9 @@
         #toast {
             transition: opacity 0.5s, transform 0.5s;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
@@ -35,74 +38,97 @@
 
     <main class="w-full max-w-4xl mx-auto z-10">
         <div class="glassmorphism p-8 md:p-12 shadow-2xl">
-            <header class="text-center mb-12">
-                <h1 class="text-5xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300">
+            <header class="text-center mb-10">
+                <h1 class="text-4xl md:text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300">
                     DocuChain
                 </h1>
-                <p class="text-gray-300 text-xl mb-2">Secure Document Verification</p>
-                <p class="text-gray-400 text-lg">Blockchain-powered document authenticity verification system</p>
+                <p class="text-gray-300 text-lg">A Secure Document Verification System using Blockchain</p>
             </header>
 
-            <!-- Role Selection Section -->
-            <div class="grid md:grid-cols-2 gap-8 mb-12">
-                <!-- Registrar Section -->
-                <div class="bg-gray-800/50 p-8 rounded-2xl border border-gray-700 text-center">
-                    <div class="mb-6">
-                        <div class="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-semibold mb-3 text-teal-300">Register Original Document</h2>
-                        <p class="text-gray-400 mb-6">For authorized personnel like registrars and authorities to register new documents on the blockchain.</p>
+            <!-- Authentication Container -->
+            <div id="authContainer">
+                <!-- Role Choice Screen -->
+                <div id="choiceScreen">
+                    <h2 class="text-2xl font-semibold mb-6 text-center text-gray-200">What would you like to do?</h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <button id="showRegistrarLoginBtn" class="bg-teal-600/80 p-6 rounded-xl btn-hover-effect text-left">
+                            <h3 class="text-xl font-bold">Register Document</h3>
+                            <p class="text-teal-200 mt-1">Login as a Registrar to add a new document's fingerprint to the blockchain.</p>
+                        </button>
+                        <button id="showVerifierLoginBtn" class="bg-blue-600/80 p-6 rounded-xl btn-hover-effect text-left">
+                            <h3 class="text-xl font-bold">Verify Document</h3>
+                            <p class="text-blue-200 mt-1">Login as a Verifier to check if a document is authentic and has not been tampered with.</p>
+                        </button>
                     </div>
-                    <button onclick="window.location.href='login_registrar.html'" class="w-full bg-teal-500 text-white font-bold py-4 px-8 rounded-xl btn-hover-effect text-lg">
-                        Access Registrar Portal
-                    </button>
                 </div>
 
-                <!-- Verifier Section -->
-                <div class="bg-gray-800/50 p-8 rounded-2xl border border-gray-700 text-center">
-                    <div class="mb-6">
-                        <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-semibold mb-3 text-blue-300">Verify Document</h2>
-                        <p class="text-gray-400 mb-6">For anyone who wants to check the authenticity of a document against our blockchain records.</p>
-                    </div>
-                    <button onclick="window.location.href='login_verifier.html'" class="w-full bg-blue-500 text-white font-bold py-4 px-8 rounded-xl btn-hover-effect text-lg">
-                        Access Verifier Portal
-                    </button>
+                <!-- Registrar Login Form -->
+                <div id="registrarLoginScreen" class="hidden">
+                    <h2 class="text-2xl font-semibold mb-4 text-center text-teal-300">Registrar Login</h2>
+                    <form id="registrarLoginForm" class="space-y-4">
+                        <input type="text" id="registrarUser" placeholder="Username (hint: registrar)" class="w-full bg-gray-800/50 p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <input type="password" id="registrarPass" placeholder="Password (hint: regpass123)" class="w-full bg-gray-800/50 p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <button type="submit" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect">Login</button>
+                        <button type="button" id="backToChoice1" class="w-full text-gray-400 hover:text-white transition">Back</button>
+                    </form>
+                </div>
+
+                <!-- Verifier Login Form -->
+                <div id="verifierLoginScreen" class="hidden">
+                     <h2 class="text-2xl font-semibold mb-4 text-center text-blue-300">Verifier Login</h2>
+                    <form id="verifierLoginForm" class="space-y-4">
+                        <input type="text" id="verifierUser" placeholder="Username (hint: verifier)" class="w-full bg-gray-800/50 p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="password" id="verifierPass" placeholder="Password (hint: verpass123)" class="w-full bg-gray-800/50 p-3 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button type="submit" class="w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect">Login</button>
+                        <button type="button" id="backToChoice2" class="w-full text-gray-400 hover:text-white transition">Back</button>
+                    </form>
                 </div>
             </div>
+            
+            <!-- Main Application Container (hidden by default) -->
+            <div id="appContainer" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <p>Welcome, <span id="userRole" class="font-bold"></span></p>
+                    <button id="logoutButton" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover-effect">Logout</button>
+                </div>
+                <!-- Section to Add New Document -->
+                <div id="registerSection" class="hidden bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-center text-teal-300">Register a New Document</h2>
+                    <div class="flex flex-col items-center">
+                        <p class="text-gray-400 mb-4 text-center">Upload a document to securely register its unique fingerprint on the blockchain.</p>
+                        <input type="file" id="newDocumentFile" class="hidden">
+                        <button id="uploadButton" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mb-4">
+                            Select Document
+                        </button>
+                        <div id="newFileInfo" class="text-center text-sm text-gray-400 min-h-[40px]"></div>
+                        <button id="registerButton" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mt-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Register Document
+                        </button>
+                    </div>
+                </div>
 
-            <!-- Features Section -->
-            <div class="bg-gray-800/30 p-6 rounded-2xl border border-gray-700">
-                <h3 class="text-xl font-semibold text-center text-gray-300 mb-6">How DocuChain Works</h3>
-                <div class="grid md:grid-cols-3 gap-6 text-center">
-                    <div class="p-4">
-                        <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-white font-bold">1</span>
-                        </div>
-                        <h4 class="font-semibold text-purple-300 mb-2">Upload & Hash</h4>
-                        <p class="text-sm text-gray-400">Documents are cryptographically hashed to create unique fingerprints</p>
+                <!-- Section to Verify Existing Document -->
+                <div id="verifySection" class="hidden bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-center text-blue-300">Verify a Document</h2>
+                     <div class="flex flex-col items-center">
+                        <p class="text-gray-400 mb-4 text-center">Check if a document is authentic by comparing its fingerprint with our records.</p>
+                        <input type="file" id="verifyDocumentFile" class="hidden">
+                        <button id="verifyUploadButton" class="w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mb-4">
+                            Select Document for Verification
+                        </button>
+                        <div id="verifyFileInfo" class="text-center text-sm text-gray-400 min-h-[40px]"></div>
+                        <div id="verificationResult" class="w-full mt-4 text-center"></div>
+                        <button id="verifyButton" class="w-full bg-teal-600 text-white font-bold py-3 px-6 rounded-xl btn-hover-effect mt-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                           Verify Authenticity
+                        </button>
                     </div>
-                    <div class="p-4">
-                        <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-white font-bold">2</span>
-                        </div>
-                        <h4 class="font-semibold text-indigo-300 mb-2">Blockchain Registration</h4>
-                        <p class="text-sm text-gray-400">Hashes are permanently recorded on our immutable blockchain ledger</p>
-                    </div>
-                    <div class="p-4">
-                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-white font-bold">3</span>
-                        </div>
-                        <h4 class="font-semibold text-green-300 mb-2">Verification</h4>
-                        <p class="text-sm text-gray-400">Anyone can verify document authenticity by comparing hashes</p>
-                    </div>
+                </div>
+                 <!-- Display Latest Block Info -->
+                <div id="blockchainInfo" class="mt-10 bg-gray-800/50 p-6 rounded-2xl border border-gray-700 text-center">
+                     <h3 class="text-xl font-semibold text-gray-300 mb-2">Blockchain Status</h3>
+                     <p class="text-gray-400">Current Blocks: <span id="blockCount" class="font-mono text-teal-400">1</span></p>
+                     <p class="text-sm text-gray-500 mt-2">Latest Block Hash:</p>
+                     <p id="latestBlockHash" class="font-mono text-xs text-blue-400 break-all">0000000000000000000000000000000000000000000000000000000000000000</p>
                 </div>
             </div>
         </div>
@@ -114,13 +140,199 @@
     </div>
 
     <script>
-    // Simple toast notification for landing page
+    // ===================================================================================
+    // III. APPLICATION LOGIC (CLIENT-SIDE)
+    // ===================================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- AUTH UI Elements ---
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        const choiceScreen = document.getElementById('choiceScreen');
+        const registrarLoginScreen = document.getElementById('registrarLoginScreen');
+        const verifierLoginScreen = document.getElementById('verifierLoginScreen');
+        const showRegistrarLoginBtn = document.getElementById('showRegistrarLoginBtn');
+        const showVerifierLoginBtn = document.getElementById('showVerifierLoginBtn');
+        const registrarLoginForm = document.getElementById('registrarLoginForm');
+        const verifierLoginForm = document.getElementById('verifierLoginForm');
+        const backToChoice1 = document.getElementById('backToChoice1');
+        const backToChoice2 = document.getElementById('backToChoice2');
+        const logoutButton = document.getElementById('logoutButton');
+        const userRoleEl = document.getElementById('userRole');
+        
+        // --- APP UI Element References ---
+        const registerSection = document.getElementById('registerSection');
+        const verifySection = document.getElementById('verifySection');
+        const uploadButton = document.getElementById('uploadButton');
+        const newDocumentFile = document.getElementById('newDocumentFile');
+        const newFileInfo = document.getElementById('newFileInfo');
+        const registerButton = document.getElementById('registerButton');
+
+        const verifyUploadButton = document.getElementById('verifyUploadButton');
+        const verifyDocumentFile = document.getElementById('verifyDocumentFile');
+        const verifyFileInfo = document.getElementById('verifyFileInfo');
+        const verifyButton = document.getElementById('verifyButton');
+        const verificationResultEl = document.getElementById('verificationResult');
+
+        const blockCountEl = document.getElementById('blockCount');
+        const latestBlockHashEl = document.getElementById('latestBlockHash');
+        
+        let fileToRegister = null;
+        let fileToVerify = null;
+
+        // --- Auth Flow Logic ---
+        function showScreen(screen) {
+            choiceScreen.classList.add('hidden');
+            registrarLoginScreen.classList.add('hidden');
+            verifierLoginScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
+        }
+
+        showRegistrarLoginBtn.addEventListener('click', () => showScreen(registrarLoginScreen));
+        showVerifierLoginBtn.addEventListener('click', () => showScreen(verifierLoginScreen));
+        backToChoice1.addEventListener('click', () => showScreen(choiceScreen));
+        backToChoice2.addEventListener('click', () => showScreen(choiceScreen));
+
+        registrarLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('registrarUser').value;
+            const pass = document.getElementById('registrarPass').value;
+            const result = simulatedBackend.authenticateUser(user, pass, 'registrar');
+            if (result.success) {
+                showToast('Login successful!', 'success');
+                authContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                registerSection.classList.remove('hidden');
+                verifySection.classList.add('hidden');
+                userRoleEl.textContent = 'Registrar';
+                userRoleEl.className = 'font-bold text-teal-300';
+            } else {
+                showToast(result.message, 'error');
+            }
+        });
+
+        verifierLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('verifierUser').value;
+            const pass = document.getElementById('verifierPass').value;
+            const result = simulatedBackend.authenticateUser(user, pass, 'verifier');
+            if (result.success) {
+                showToast('Login successful!', 'success');
+                authContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                verifySection.classList.remove('hidden');
+                registerSection.classList.add('hidden');
+                userRoleEl.textContent = 'Verifier';
+                userRoleEl.className = 'font-bold text-blue-300';
+            } else {
+                showToast(result.message, 'error');
+            }
+        });
+
+        logoutButton.addEventListener('click', () => {
+            simulatedBackend.logout();
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            showScreen(choiceScreen);
+            // Reset forms
+            registrarLoginForm.reset();
+            verifierLoginForm.reset();
+            showToast('You have been logged out.', 'info');
+        });
+
+        // --- Event Listeners for Registration ---
+        uploadButton.addEventListener('click', () => newDocumentFile.click());
+        newDocumentFile.addEventListener('change', (event) => {
+            fileToRegister = event.target.files[0];
+            if (fileToRegister) {
+                newFileInfo.textContent = `Selected: ${fileToRegister.name}`;
+                registerButton.disabled = false;
+            }
+        });
+        registerButton.addEventListener('click', async () => {
+            if (!fileToRegister) {
+                showToast('Please select a document first.', 'error');
+                return;
+            }
+            showToast('Processing and hashing document...', 'info');
+            
+            const documentHash = await cryptoLogic.hashFile(fileToRegister);
+            showToast(`Document hash created: ${documentHash.substring(0,10)}...`, 'info');
+
+            setTimeout(async () => {
+                const result = await simulatedBackend.registerDocument(documentHash);
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    updateBlockchainInfo();
+                } else {
+                    showToast(result.message, 'error');
+                }
+                newDocumentFile.value = '';
+                fileToRegister = null;
+                newFileInfo.textContent = '';
+                registerButton.disabled = true;
+            }, 1500); 
+        });
+
+        // --- Event Listeners for Verification ---
+        verifyUploadButton.addEventListener('click', () => verifyDocumentFile.click());
+        verifyDocumentFile.addEventListener('change', (event) => {
+            fileToVerify = event.target.files[0];
+            if (fileToVerify) {
+                verifyFileInfo.textContent = `Selected: ${fileToVerify.name}`;
+                verifyButton.disabled = false;
+                verificationResultEl.innerHTML = ''; 
+            }
+        });
+        verifyButton.addEventListener('click', async () => {
+            if (!fileToVerify) {
+                showToast('Please select a document to verify.', 'error');
+                return;
+            }
+            showToast('Processing document for verification...', 'info');
+            verificationResultEl.innerHTML = `<p class="text-yellow-400 animate-pulse">Verifying fingerprint...</p>`;
+            
+            const documentHash = await cryptoLogic.hashFile(fileToVerify);
+
+            setTimeout(async () => {
+                const result = await simulatedBackend.verifyDocument(documentHash);
+                if (result.isAuthentic) {
+                     const timestamp = result.block.timestamp;
+                     showToast(`✅ Verified! Document is authentic. Found in Block #${result.block.index}.`, 'success');
+                     verificationResultEl.innerHTML = `
+                        <div class="p-3 rounded-xl bg-green-900/50 border border-green-500 text-left">
+                            <h4 class="font-bold text-green-300 text-center">✅ Authentic Document</h4>
+                            <p class="text-sm text-gray-300 mt-2"><strong>Found In:</strong> Block #${result.block.index}</p>
+                            <p class="text-sm text-gray-300"><strong>Timestamp:</strong> ${new Date(timestamp).toLocaleString()}</p>
+                            <button onclick="downloadCertificate('${documentHash}', ${result.block.index}, ${timestamp})" class="w-full mt-4 bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg btn-hover-effect">
+                                Download Certificate
+                            </button>
+                        </div>
+                     `;
+                } else {
+                     showToast(`❌ Warning! Document is not authentic or has been altered.`, 'error');
+                     verificationResultEl.innerHTML = `
+                        <div class="p-3 rounded-xl bg-red-900/50 border border-red-500 text-left">
+                            <h4 class="font-bold text-red-300 text-center">❌ Unverified Document</h4>
+                            <p class="text-sm text-gray-300 mt-2">This document's fingerprint was not found on the blockchain. It may have been altered.</p>
+                        </div>
+                     `;
+                }
+                verifyDocumentFile.value = '';
+                fileToVerify = null;
+                verifyFileInfo.textContent = '';
+                verifyButton.disabled = true;
+            }, 1500);
+        });
+    });
+
+    // --- UI & Helper Functions ---
     function showToast(message, type = 'info') {
         const toastEl = document.getElementById('toast');
         const toastMessageEl = document.getElementById('toastMessage');
         toastMessageEl.textContent = message;
         
-        toastEl.className = 'fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-lg opacity-0 transform translate-y-2';
+        toastEl.className = 'fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-lg opacity-0 transform translate-y-2 z-50';
 
         if (type === 'success') {
             toastEl.classList.add('bg-green-600', 'border', 'border-green-500');
@@ -138,9 +350,175 @@
             toastEl.classList.add('opacity-0', 'translate-y-2');
         }, 5000);
     }
+
+    function updateBlockchainInfo() {
+        const chain = simulatedBackend.getBlockchain();
+        const latestBlock = chain[chain.length - 1];
+        document.getElementById('blockCount').textContent = chain.length;
+        document.getElementById('latestBlockHash').textContent = latestBlock.hash;
+    }
+
+    function downloadCertificate(documentHash, blockIndex, timestamp) {
+        const certificateContent = `
+=================================
+DOCUCHAIN VERIFICATION CERTIFICATE
+=================================
+This document certifies the authenticity of a digital file based on its cryptographic hash recorded on the DocuChain ledger.
+Verification Status: AUTHENTIC
+Document Hash (SHA-256):
+${documentHash}
+Recorded in Block: #${blockIndex}
+Timestamp (IST): ${new Date(timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+Generated On: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+=================================
+This certificate is valid as long as the document hash matches the one recorded. Any modification to the original file will invalidate this certificate.
+        `;
+        const blob = new Blob([certificateContent.trim()], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DocuChain_Certificate_${documentHash.substring(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener('DOMContentLoaded', updateBlockchainInfo);
+
+    // ===================================================================================
+    // II. CRYPTOGRAPHY LOGIC
+    // ===================================================================================
+    const cryptoLogic = {
+        async hashFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const buffer = event.target.result;
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        resolve(hashHex);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
+        },
+        async hashString(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+    };
+
+    // ===================================================================================
+    // I. SIMULATED BACKEND & BLOCKCHAIN
+    // ===================================================================================
+    const simulatedBackend = (() => {
+        let blockchain = [];
+        let currentUser = null;
+
+        const users = {
+            registrar: 'regpass123',
+            verifier: 'verpass123'
+        };
+
+        class Block {
+            constructor(index, timestamp, documentHash, previousHash = '') {
+                this.index = index;
+                this.timestamp = timestamp;
+                this.documentHash = documentHash;
+                this.previousHash = previousHash;
+                this.hash = '';
+            }
+            async calculateHash() {
+                const dataToHash = this.index + this.previousHash + this.timestamp + this.documentHash;
+                return await cryptoLogic.hashString(dataToHash);
+            }
+        }
+        
+        async function createGenesisBlock() {
+            const genesisBlock = new Block(0, Date.now(), "Genesis Block", "0");
+            genesisBlock.hash = "0000000000000000000000000000000000000000000000000000000000000000";
+            return genesisBlock;
+        }
+
+        function getLatestBlock() {
+            return blockchain[blockchain.length - 1];
+        }
+
+        async function addBlock(newBlock) {
+            newBlock.previousHash = getLatestBlock().hash;
+            newBlock.hash = await newBlock.calculateHash();
+            blockchain.push(newBlock);
+        }
+
+        function authenticateUser(username, password, role) {
+            if (users[username] && users[username] === password) {
+                if ((role === 'registrar' && username === 'registrar') || (role === 'verifier' && username === 'verifier')) {
+                     currentUser = { username, role };
+                     return { success: true };
+                }
+            }
+            return { success: false, message: 'Invalid credentials or role.' };
+        }
+        
+        function logout() {
+            currentUser = null;
+        }
+
+        async function registerDocument(documentHash) {
+            if (!currentUser || currentUser.role !== 'registrar') {
+                return { success: false, message: 'Unauthorized. Only Registrars can add documents.' };
+            }
+            const existing = blockchain.some(block => block.documentHash === documentHash);
+            if (existing) {
+                return { success: false, message: 'This document has already been registered.' };
+            }
+            const newBlock = new Block(blockchain.length, Date.now(), documentHash);
+            await addBlock(newBlock);
+            console.log('Blockchain updated:', blockchain);
+            return { success: true, message: 'Document registered successfully on the blockchain!' };
+        }
+
+        async function verifyDocument(documentHash) {
+            if (!currentUser || currentUser.role !== 'verifier') {
+                return { isAuthentic: false, message: 'Unauthorized. Only Verifiers can check documents.' };
+            }
+            for (const block of blockchain) {
+                if (block.documentHash === documentHash) {
+                    return { isAuthentic: true, block: { index: block.index, timestamp: block.timestamp } };
+                }
+            }
+            return { isAuthentic: false, message: 'Document hash not found.' };
+        }
+
+        async function initialize() {
+             if (blockchain.length === 0) {
+                const genesis = await createGenesisBlock();
+                blockchain.push(genesis);
+                console.log('Genesis Block created.');
+             }
+        }
+        
+        initialize();
+
+        return {
+            authenticateUser,
+            logout,
+            registerDocument,
+            verifyDocument,
+            getBlockchain: () => blockchain
+        };
+
+    })();
     </script>
 </body>
 </html>
-
-
 
