@@ -22,6 +22,15 @@ def create_app(config_name=None):
     # Initialize CORS
     CORS(app, origins=app.config.get('CORS_ORIGINS', '*'))
     
+    # Add security headers
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
+    
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(cert_bp)

@@ -9,6 +9,7 @@ const AuthForms = ({ initialUserType = 'institution', onLoginSuccess }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [conflictInfo, setConflictInfo] = useState(null);
     const { login } = useAuth();
 
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,12 +19,14 @@ const AuthForms = ({ initialUserType = 'institution', onLoginSuccess }) => {
         setFormData({ name: '', email: '', password: '' });
         setError('');
         setSuccess('');
+        setConflictInfo(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
+        setConflictInfo(null);
         setIsLoading(true);
 
         try {
@@ -32,21 +35,48 @@ const AuthForms = ({ initialUserType = 'institution', onLoginSuccess }) => {
                 await apiCall(formData);
                 setSuccess('Registration successful! Please log in.');
                 setActiveTab('login');
+                setFormData({ name: '', email: '', password: '' }); // Clear form on success
             } else {
+                // Client-side validation to ensure required fields are present
+                if (!formData.email || !formData.password) {
+                    setError('Please enter both email and password');
+                    return;
+                }
+                
+                if (!formData.email.trim() || !formData.password.trim()) {
+                    setError('Email and password cannot be empty');
+                    return;
+                }
+                
                 const apiCall = userType === 'institution' ? loginInstitution : loginVerifier;
                 const response = await apiCall(formData);
-                login(response.data.token);
+                
+                // Fix: The axios interceptor returns response.data directly, so token is at response.token
+                login(response.token);
                 if (onLoginSuccess) onLoginSuccess();
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'An error occurred. Please try again.');
+            const errorData = err.response?.data;
+            
+            if (err.response?.status === 409 && errorData) {
+                // Handle 409 Conflict errors with detailed information
+                setConflictInfo({
+                    conflict: errorData.conflict,
+                    message: errorData.message,
+                    suggestions: errorData.suggestions
+                });
+                setError(errorData.error || 'Account already exists');
+            } else {
+                // Handle other errors
+                setError(errorData?.error || err.message || 'An error occurred. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
     };
     
     const handleGoogleLogin = () => {
-        const backendBase = 'http://localhost:5001'; // Make sure this matches your backend URL
+        const backendBase = 'http://localhost:5000'; // Make sure this matches your backend URL
         const endpoint = userType === 'institution' ? '/login/institution/google' : '/login/verifier/google';
         window.location.href = backendBase + endpoint;
     };
@@ -87,23 +117,71 @@ const AuthForms = ({ initialUserType = 'institution', onLoginSuccess }) => {
                  </button>
             )}
 
-            {error && <p className="text-failure-red text-sm text-center mb-4">{error}</p>}
+            {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-failure-red text-sm font-semibold mb-2">{error}</p>
+                    {conflictInfo && (
+                        <div className="text-sm text-red-700">
+                            <p className="mb-2">{conflictInfo.message}</p>
+                            {conflictInfo.suggestions && (
+                                <div className="ml-2">
+                                    <p className="font-medium mb-1">What you can do:</p>
+                                    <ul className="list-disc list-inside space-y-1">
+                                        {conflictInfo.suggestions.map((suggestion, index) => (
+                                            <li key={index} className="text-xs">{suggestion}</li>
+                                        ))}
+                                    </ul>
+                                    {conflictInfo.conflict === 'email' && (
+                                        <button 
+                                            onClick={() => {setActiveTab('login'); setError(''); setConflictInfo(null);}}
+                                            className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                        >
+                                            Switch to Login
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
             {success && <p className="text-success-green text-sm text-center mb-4">{success}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 {activeTab === 'register' && (
                     <div>
                         <label className="block text-sm font-bold text-gray-600 mb-1">{userType === 'institution' ? 'Institution Name' : 'Full Name'}</label>
-                        <input type="text" name="name" onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" required />
+                        <input 
+                            type="text" 
+                            name="name" 
+                            value={formData.name}
+                            onChange={handleInputChange} 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" 
+                            required 
+                        />
                     </div>
                 )}
                 <div>
                     <label className="block text-sm font-bold text-gray-600 mb-1">Email</label>
-                    <input type="email" name="email" onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" required />
+                    <input 
+                        type="email" 
+                        name="email" 
+                        value={formData.email}
+                        onChange={handleInputChange} 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" 
+                        required 
+                    />
                 </div>
                 <div>
                     <label className="block text-sm font-bold text-gray-600 mb-1">Password</label>
-                    <input type="password" name="password" onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" required />
+                    <input 
+                        type="password" 
+                        name="password" 
+                        value={formData.password}
+                        onChange={handleInputChange} 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-academic-blue" 
+                        required 
+                    />
                 </div>
                 <button type="submit" disabled={isLoading} className="w-full bg-academic-blue text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
                     {isLoading ? 'Processing...' : (activeTab === 'login' ? 'Login' : 'Register')}

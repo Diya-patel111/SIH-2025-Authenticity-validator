@@ -38,27 +38,66 @@ def register_institution():
     password = data.get('password')
 
     if not all([name, email, password]):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields: name, email, and password are required"}), 400
+
+    # Normalize email
+    email = email.strip().lower()
+    name = name.strip()
+    
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long"}), 400
 
     hashed_password = hash_password(password)
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id FROM institutions WHERE email = %s", (email,))
-        if cur.fetchone():
-            return jsonify({"error": "Email already registered"}), 409
         
+        # Check for existing institution
+        cur.execute("SELECT id, name FROM institutions WHERE email = %s", (email,))
+        existing = cur.fetchone()
+        if existing:
+            cur.close()
+            conn.close()
+            return jsonify({
+                "error": "Institution already registered",
+                "message": f"An institution is already registered with email '{email}'. Please use a different email address or log in if this is your account.",
+                "conflict": "email",
+                "suggestions": [
+                    "Try logging in instead",
+                    "Use a different email address",
+                    "Contact support if you believe this is an error"
+                ]
+            }), 409
+        
+        # Insert new institution
         cur.execute(
             "INSERT INTO institutions (name, email, password_hash) VALUES (%s, %s, %s)",
             (name, email, hashed_password)
         )
         conn.commit()
+        new_id = cur.lastrowid
         cur.close()
         conn.close()
-        return jsonify({"message": "Institution registered successfully"}), 201
+        
+        return jsonify({
+            "message": "Institution registered successfully",
+            "institution": {
+                "id": new_id,
+                "name": name,
+                "email": email
+            }
+        }), 201
+        
     except Error as e:
-        return jsonify({"error": f"Database error: {e}"}), 500
+        # Handle MySQL duplicate entry error (just in case of race conditions)
+        if e.errno == 1062:  # MySQL duplicate entry error
+            return jsonify({
+                "error": "Institution already registered",
+                "message": f"An institution is already registered with email '{email}'. Please use a different email address or log in.",
+                "conflict": "email"
+            }), 409
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 @auth_bp.route('/institution/login', methods=['POST'])
 def login_institution():
@@ -94,27 +133,66 @@ def register_verifier():
     password = data.get('password')
 
     if not all([name, email, password]):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields: name, email, and password are required"}), 400
+
+    # Normalize email and name
+    email = email.strip().lower()
+    name = name.strip()
+    
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long"}), 400
 
     hashed_password = hash_password(password)
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id FROM verifiers WHERE email = %s", (email,))
-        if cur.fetchone():
-            return jsonify({"error": "Email already registered"}), 409
         
+        # Check for existing verifier
+        cur.execute("SELECT id, name FROM verifiers WHERE email = %s", (email,))
+        existing = cur.fetchone()
+        if existing:
+            cur.close()
+            conn.close()
+            return jsonify({
+                "error": "Verifier already registered",
+                "message": f"A verifier is already registered with email '{email}'. Please use a different email address or log in if this is your account.",
+                "conflict": "email",
+                "suggestions": [
+                    "Try logging in instead",
+                    "Use a different email address",
+                    "Contact support if you believe this is an error"
+                ]
+            }), 409
+        
+        # Insert new verifier
         cur.execute(
             "INSERT INTO verifiers (name, email, password_hash) VALUES (%s, %s, %s)",
             (name, email, hashed_password)
         )
         conn.commit()
+        new_id = cur.lastrowid
         cur.close()
         conn.close()
-        return jsonify({"message": "Verifier registered successfully"}), 201
+        
+        return jsonify({
+            "message": "Verifier registered successfully",
+            "verifier": {
+                "id": new_id,
+                "name": name,
+                "email": email
+            }
+        }), 201
+        
     except Error as e:
-        return jsonify({"error": f"Database error: {e}"}), 500
+        # Handle MySQL duplicate entry error (just in case of race conditions)
+        if e.errno == 1062:  # MySQL duplicate entry error
+            return jsonify({
+                "error": "Verifier already registered",
+                "message": f"A verifier is already registered with email '{email}'. Please use a different email address or log in.",
+                "conflict": "email"
+            }), 409
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 @auth_bp.route('/verifier/login', methods=['POST'])
 def login_verifier():

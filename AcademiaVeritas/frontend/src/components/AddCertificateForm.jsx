@@ -34,17 +34,60 @@ const AddCertificateForm = () => {
         }
 
         try {
-            const extractedData = await extractCertificateData(currentFile);
-            setFormData({
-                student_name: extractedData.student_name || '',
-                roll_number: extractedData.roll_number || '',
-                course_name: extractedData.course_name || '',
-                grade: extractedData.grade || '',
-                issue_date: extractedData.issue_date || '',
-            });
-            setStatus(prev => ({...prev, success: "Data extracted successfully. Please review."}));
+            const response = await extractCertificateData(currentFile);
+            console.log('OCR Response:', response); // Debug log
+            
+            // Handle the nested response structure from backend
+            const extractedData = response.extracted_data || response;
+            
+            if (extractedData) {
+                // Convert date format if needed (YYYY-MM-DD for HTML date input)
+                let formattedDate = extractedData.issue_date || '';
+                if (formattedDate) {
+                    // Handle various date formats from OCR
+                    const dateFormats = [
+                        /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
+                        /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/, // DD/MM/YYYY or MM/DD/YYYY
+                        /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/ // YYYY/MM/DD
+                    ];
+                    
+                    // If it's already in YYYY-MM-DD format, use as is
+                    if (!dateFormats[0].test(formattedDate)) {
+                        // Try to parse other formats
+                        const match = formattedDate.match(dateFormats[1]) || formattedDate.match(dateFormats[2]);
+                        if (match) {
+                            // Assume DD/MM/YYYY format and convert to YYYY-MM-DD
+                            const day = match[1].padStart(2, '0');
+                            const month = match[2].padStart(2, '0');
+                            const year = match[3];
+                            formattedDate = `${year}-${month}-${day}`;
+                        }
+                    }
+                }
+                
+                const newFormData = {
+                    student_name: extractedData.student_name || '',
+                    roll_number: extractedData.roll_number || '',
+                    course_name: extractedData.course_name || '',
+                    grade: extractedData.grade || '',
+                    issue_date: formattedDate,
+                };
+                
+                console.log('Setting form data:', newFormData);
+                setFormData(newFormData);
+                
+                // Count how many fields were extracted successfully
+                const extractedFieldsCount = Object.values(newFormData).filter(value => value && value.trim()).length;
+                setStatus(prev => ({
+                    ...prev, 
+                    success: `Data extracted successfully! ${extractedFieldsCount}/5 fields detected. Please review and correct any details before submitting.`
+                }));
+            } else {
+                setStatus(prev => ({...prev, error: "No data could be extracted from the certificate image."}));
+            }
         } catch (err) {
-            setStatus(prev => ({...prev, error: err.message || 'Failed to extract data.'}));
+            console.error('OCR Error:', err);
+            setStatus(prev => ({...prev, error: err.message || 'Failed to extract data from certificate. Please check the image quality.'}));
         } finally {
             setStatus(prev => ({...prev, processing: false}));
         }
@@ -93,10 +136,18 @@ const AddCertificateForm = () => {
                                 <button onClick={() => { setFile(null); setFilePreview(null); resetForm(); resetStatus(); }} className="text-sm text-failure-red mt-2">Clear</button>
                             </div>
                         )}
-                        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mt-4 rounded-r-lg" role="alert">
-                           <p className="font-bold">Review & Edit</p>
-                           <p>Please verify and correct the extracted information below before submitting.</p>
-                        </div>
+                        {status.success ? (
+                            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mt-4 rounded-r-lg" role="alert">
+                                <p className="font-bold">✅ OCR Extraction Complete!</p>
+                                <p>{status.success}</p>
+                                <p className="text-sm mt-1">The form below has been automatically filled. Please review and correct any details before submitting.</p>
+                            </div>
+                        ) : (
+                            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mt-4 rounded-r-lg" role="alert">
+                                <p className="font-bold">📄 Processing Certificate</p>
+                                <p>Upload your certificate image and we'll automatically extract the details for you.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
