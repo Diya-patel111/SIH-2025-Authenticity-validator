@@ -254,16 +254,8 @@ def _extract_details_with_regex(text: str) -> dict:
     # Comprehensive regex patterns for data extraction
     patterns = {
         'student_name': [
-            # Pattern 1: Look for names after common certificate phrases
-            r"(?i)This\s+is\s+to\s+certify\s+that\s+([A-Z][a-z]+\s[A-Z][a-z]+)",
-            # Pattern 2: Look for names after "Name:" or similar labels
             r"(?i)(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Z][a-z]+(?:\s[A-Z][a-z'\\]+)+)",
-            # Pattern 3: Generic three-part name pattern (First Middle Last)
-            r"([A-Z][a-z]+\s[A-Z][a-z\.]+\s[A-Z][a-z]+)",
-            # Pattern 4: Two-part name pattern (First Last)
-            r"([A-Z][a-z]+\s[A-Z][a-z]+)",
-            # Pattern 5: Look for names in quotes
-            r'"([A-Z][a-z]+(?:\s[A-Z][a-z\'\\]+)+)"'
+            r"(?i)(?:This is to certify that|is hereby awarded to)\s+([A-Z][a-z]+(?:\s[A-Z][a-z'\\]+){1,3})"
         ],
         
         'roll_number': [
@@ -281,20 +273,9 @@ def _extract_details_with_regex(text: str) -> dict:
         
         # ...existing code...
         'course_name': [
-            # Pattern 0: Look for 'Branch:' followed by course name
-            r"(?i)Branch\s*[:\-]?\s*([A-Z][A-Za-z\s&]+)",
-            # Pattern 1: Look for 'Exam:' followed by course/degree name
-            r"(?i)Exam\s*[:\-]?\s*([A-Z][A-Za-z0-9\s\-\(\)]+)",
-            # Pattern 2: Look for degree/course names after common phrases
-            r"(?i)(?:in|for|of)\s+([A-Z][A-Za-z\s]+(?:Bachelor|Master|Diploma|Certificate|Degree|Program|Course))",
-            # Pattern 3: Look for course names with "in" keyword
-            r"(?i)(?:anch|Bachelor|Master|Diploma|Certificate|Degree)\s+of\s+([A-Z][A-Za-z\s]+)",
-            # Pattern 4: Look for course names in quotes
-            r'"([A-Z][A-Za-z\s]+(?:Bachelor|Master|Diploma|Certificate|Degree|Program|Course))"',
-            # Pattern 5: Generic course name pattern
-            r"([A-Z][A-Za-z\s]{10,50}(?:Bachelor|Master|Diploma|Certificate|Degree|Program|Course))",
-            # Pattern 6: Look for course names with "in" at the beginning
-            r"(?i)in\s+([A-Z][A-Za-z\s]+(?:Engineering|Technology|Science|Arts|Commerce|Management))"
+            r"(?i)(?:of|in|awarded for)\s+([A-Z][A-Za-z\s]+(?:Engineering|Technology|Science|Arts|Commerce|Management|Degree|Program|Course))",
+            r"(?i)(?:Bachelor|Master|Diploma|Certificate)\s+of\s+([A-Z][A-Za-z\s]+)",
+            r"([A-Z][A-Za-z\s]{10,50}(?:Bachelor|Master|Diploma|Certificate|Degree|Program|Course))"
         ],
 # ...existing code...
         

@@ -12,6 +12,8 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from utils.database import get_db_connection
 from utils.hashing import generate_certificate_hash
+from datetime import datetime
+
 
 # Load SECRET_KEY from environment variables for JWT signing
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -325,6 +327,7 @@ def verify_certificate(user_id, user_type):
             
             # Validate extracted data
             validated_details = validate_extracted_data(extracted_details)
+            print(f"OCR Extracted Details: {validated_details}")
             
             # Check if extraction was successful
             if validated_details.get('error'):
@@ -353,6 +356,19 @@ def verify_certificate(user_id, user_type):
             try:
                 cursor = connection.cursor()
                 certificate_record = None
+                # Reformat date from DD/MM/YYYY to YYYY-MM-DD for database query
+                try:
+                    if validated_details.get('issue_date'):
+                        # Assuming OCR format is DD/MM/YYYY, convert it
+                        day, month, year = validated_details['issue_date'].split('/')
+                        formatted_date = f"{year}-{month}-{day}"
+                        validated_details['issue_date'] = formatted_date
+                except (ValueError, IndexError):
+                         # Handle cases where date format is unexpected
+                        pass
+                
+                
+                
                 
                 # Approach 1: Search by basic certificate data (name, roll, course, date)
                 # This handles certificates regardless of hash format
@@ -373,6 +389,7 @@ def verify_certificate(user_id, user_type):
                 )
                 
                 certificate_record = cursor.fetchone()
+                print(f"Database Record Found: {certificate_record}")
                 
                 if certificate_record:
                     # Certificate found in database - perform comprehensive verification
